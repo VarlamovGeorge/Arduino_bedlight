@@ -60,7 +60,7 @@ void loop() {
   
   if(sensorValue>thresholdValue){//Если достаточно темно
   boolean humanDetected = digitalRead(PIR1) | digitalRead(PIR2) | digitalRead(PIR3);
-  Serial.println("Dark mode. Human detected= "+String(humanDetected));
+  Serial.println("Dark mode. PIR1= "+String(digitalRead(PIR1))+" PIR2= "+String(digitalRead(PIR2))+" PIR3= "+String(digitalRead(PIR3)));
     if(!ledStatus && humanDetected){//Если подсветка была выключена и сработал один из сенсоров, то включаем подсветку на X секунд
       PIRlight=true;//Выставляем признак включения подсветки от PIR сенсора
       switch_time_PIR = millis();
