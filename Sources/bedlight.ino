@@ -12,6 +12,8 @@
 //Пин, отвечающий за прерывание по ручной кнопке (включение/выключение подсветки)
 #define interruptPin 2
 
+volatile unsigned long swtch_time=0;
+
 //Длительность работы подсветки после включения (сек.):
 int lightDur=15;
 
@@ -28,7 +30,7 @@ void setup() {
   pinMode(PIR1, INPUT);
   pinMode(PIR2, INPUT);
   pinMode(PIR3, INPUT);
-  attachInterrupt(digitalPinToInterrupt(interruptPin), manualSwitch, FALLING);
+  attachInterrupt(digitalPinToInterrupt(interruptPin), manualSwitch, RISING);
 }
 
 
@@ -36,6 +38,7 @@ void loop() {
   sensorValue = analogRead(DARKNESS_PIN);//Считываем текущую освещенность
   int thresholdValue = analogRead(THRESHOLD_PIN);//Считываем порог освещенности с потенциометра
   Serial.println("sensorValue="+String(sensorValue)+" Threshold value="+String(thresholdValue));
+  Serial.println(millis()-swtch_time);
   
   while(sensorValue>thresholdValue){//Если достаточно темно
   boolean humanDetected = digitalRead(PIR1) | digitalRead(PIR2) | digitalRead(PIR3);
@@ -61,13 +64,15 @@ void ledstripOff(){
   ledStatus=false;
 }
 
-void manualSwitch(){
-  Serial.println("EXEPTION!");
-  if(ledStatus){
-    ledstripOff();
+void manualSwitch(){//Обработчик прерываний по нажатию на кнопку ручного выключения/выключения подсветки
+  if(millis()-swtch_time>500){//В целях защиты от дребезка меняем состяние не чаще, чем раз в 500 мс
+    if(ledStatus){
+      ledstripOff();
+    }
+    else{
+      ledstripOn();
+    }
+  swtch_time = millis();
   }
-  else{
-    ledstripOn();
-  }
-  delay(100);
+  
 }
