@@ -40,6 +40,7 @@ void setup() {
   pinMode(PIR2, INPUT);
   pinMode(PIR3, INPUT);
   attachInterrupt(digitalPinToInterrupt(interruptPin), manualSwitch, FALLING);
+  pinMode(LED_BUILTIN, OUTPUT);
 }
 
 
@@ -59,8 +60,9 @@ void loop() {
   }
   
   if(sensorValue>thresholdValue){//Если достаточно темно
-  boolean humanDetected = digitalRead(PIR1) | digitalRead(PIR2) | digitalRead(PIR3);
-  Serial.println("Dark mode. PIR1= "+String(digitalRead(PIR1))+" PIR2= "+String(digitalRead(PIR2))+" PIR3= "+String(digitalRead(PIR3)));
+    digitalWrite(LED_BUILTIN, HIGH);//Включаем светодиод на плате для индикации, что освещение теемнее, чем порог
+    boolean humanDetected = digitalRead(PIR1) | digitalRead(PIR2) | digitalRead(PIR3);
+    Serial.println("Dark mode. PIR1= "+String(digitalRead(PIR1))+" PIR2= "+String(digitalRead(PIR2))+" PIR3= "+String(digitalRead(PIR3)));
     if(!ledStatus && humanDetected){//Если подсветка была выключена и сработал один из сенсоров, то включаем подсветку на X секунд
       PIRlight=true;//Выставляем признак включения подсветки от PIR сенсора
       switch_time_PIR = millis();
@@ -70,9 +72,12 @@ void loop() {
     }
     //sensorValue = analogRead(DARKNESS_PIN);//Считываем текущую освещенность
   }
+  else{
+    digitalWrite(LED_BUILTIN, LOW);//Включаем светодиод на плате
+  }
 
   if(ledStatus && PIRlight && (millis()-switch_time_PIR > 1000*lightDur)){//Подсветка горит и была включена с помощью PIR сенсора:
-    ledstripOff();//Выключаем подсветку
+    ledstripOff();//Выключаем подсветку при привышении таймером заданного промежутка времени
   }
   
 }
@@ -93,7 +98,7 @@ void ledstripOff(){
 }
 
 void manualSwitch(){//Обработчик прерываний по нажатию на кнопку ручного выключения/выключения подсветки
-  if(millis()-switch_time>500){//В целях защиты от дребезка меняем состяние не чаще, чем раз в 500 мс
+  if(millis()-switch_time>1000){//В целях защиты от дребезка меняем состояние не чаще, чем раз в 1000 мс
     if(ledStatus){
       ledstripOff();
     }
