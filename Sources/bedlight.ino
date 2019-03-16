@@ -1,27 +1,31 @@
-/*
-  AnalogReadSerial
-  Reads an analog input on pin 0, prints the result to the serial monitor.
-  Attach the center pin of a potentiometer to pin A0, and the outside pins to +5V and ground.
+//Пин, отвечающий за прием данных об освещенности:
+#define DARKNESS_PIN A2
+//Пин, отвечающий за включение
+#define LEDSTRIP_PIN 13
 
- This example code is in the public domain.
- */
+//Величина освещенности:
+int sensorValue=0;
+boolean ledStatus=false;
 
-// the setup routine runs once when you press reset:
 void setup() {
-  // initialize serial communication at 9600 bits per second:
   Serial.begin(9600);
-  pinMode(13, OUTPUT);
+  pinMode(LEDSTRIP_PIN, OUTPUT);
+  digitalWrite(LEDSTRIP_PIN, LOW);
 }
 
 // the loop routine runs over and over again forever:
 void loop() {
-  // read the input on analog pin 0:
-  int sensorValue = analogRead(A2);
-  // print out the value you read:
-  Serial.println(sensorValue);
-  if(sensorValue>200){
-    digitalWrite(13, HIGH);
+  sensorValue = analogRead(DARKNESS_PIN);//Считываем текущую освещенность
+  //Serial.println("sensorValue="+String(sensorValue));
+  if(sensorValue>200 & !ledStatus){
+    digitalWrite(LEDSTRIP_PIN, HIGH);
+    Serial.println("Light is ON. Lightness value="+String(sensorValue));
+    ledStatus=true;
   }
-  else{digitalWrite(13, LOW);}
-  delay(1000);        // delay in between reads for stability
+  else if(sensorValue<=200 & ledStatus){
+    digitalWrite(LEDSTRIP_PIN, LOW);
+    Serial.println("Light is OFF. Lightness value="+String(sensorValue));
+    ledStatus=false;
+  }
+  delay(500);        // delay in between reads for stability
 }
