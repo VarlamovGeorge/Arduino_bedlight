@@ -1,5 +1,7 @@
 //Пин, отвечающий за прием данных об освещенности:
 #define DARKNESS_PIN A5
+//Пин, отвечающий за прием данных о пороге освещенности:
+#define THRESHOLD_PIN A1
 //Пин, отвечающий за включение
 #define LEDSTRIP_PIN 13
 //Пины, к которым подключены PIR-сенсоры (датчики движения HC-SR501)
@@ -32,9 +34,10 @@ void setup() {
 
 void loop() {
   sensorValue = analogRead(DARKNESS_PIN);//Считываем текущую освещенность
-  //Serial.println("sensorValue="+String(sensorValue));
+  int thresholdValue = analogRead(THRESHOLD_PIN);//Считываем порог освещенности с потенциометра
+  Serial.println("sensorValue="+String(sensorValue)+" Threshold value="+String(thresholdValue));
   
-  while(sensorValue>200){//Если достаточно темно
+  while(sensorValue>thresholdValue){//Если достаточно темно
   boolean humanDetected = digitalRead(PIR1) | digitalRead(PIR2) | digitalRead(PIR3);
   Serial.println("Human detected? "+String(humanDetected));
     if(!ledStatus && humanDetected){//Если подсветка была выключена и сработал один из сенсоров, то включаем подсветку на X секунд
@@ -59,10 +62,12 @@ void ledstripOff(){
 }
 
 void manualSwitch(){
+  Serial.println("EXEPTION!");
   if(ledStatus){
     ledstripOff();
   }
   else{
     ledstripOn();
   }
+  delay(100);
 }
