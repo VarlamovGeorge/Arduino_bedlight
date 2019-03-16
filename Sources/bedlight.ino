@@ -7,6 +7,9 @@
 #define PIR2 11
 #define PIR3 12
 
+//Пин, отвечающий за прерывание по ручной кнопке (включение/выключение подсветки)
+#define interruptPin 2
+
 //Длительность работы подсветки после включения (сек.):
 int lightDur=15;
 
@@ -23,6 +26,7 @@ void setup() {
   pinMode(PIR1, INPUT);
   pinMode(PIR2, INPUT);
   pinMode(PIR3, INPUT);
+  attachInterrupt(digitalPinToInterrupt(interruptPin), manualSwitch, FALLING);
 }
 
 
@@ -52,4 +56,13 @@ void ledstripOff(){
   digitalWrite(LEDSTRIP_PIN, LOW);
   Serial.println("Light is OFF. Lightness value="+String(sensorValue));
   ledStatus=false;
+}
+
+void manualSwitch(){
+  if(ledStatus){
+    ledstripOff();
+  }
+  else{
+    ledstripOn();
+  }
 }
