@@ -17,12 +17,18 @@
 volatile unsigned long switch_time=0;
 volatile unsigned long switch_time_PIR=0;
 
-//Длительность работы подсветки после включения (сек.):
+//Переменная для порога освещенности:
+int thresholdValue;
+
+//Длительность работы подсветки после включения от сенсора (сек.):
 int lightDur=15;
+
+//Длительность работы подсветки после включения от сенсора (мин.):
+long int manLightDur=30;
 
 //Величина освещенности:
 int sensorValue=0;
-//Величина яркость подсетки:
+//Величина яркость подсветки:
 int brightnessValue=0;
 //Статус подсветки (изначально выключена):
 boolean ledStatus=false;
@@ -46,14 +52,27 @@ void setup() {
 
 void loop() {
   sensorValue = analogRead(DARKNESS_PIN);//Считываем текущую освещенность
-  int thresholdValue = analogRead(THRESHOLD_PIN);//Считываем порог освещенности с потенциометра
+  thresholdValue = analogRead(THRESHOLD_PIN);//Считываем порог освещенности с потенциометра
   brightnessValue = analogRead(BRIGHT_PIN);//Считываем требуемую яркость с потенциометра
   Serial.println("LED= "+String(ledStatus)+" SensorValue="+String(sensorValue)+" Threshold value="+String(thresholdValue)+" Brightness value="+String(brightnessValue)+" PIR detected="+String(PIRlight));
   Serial.println(millis()-switch_time);
   Serial.println(millis()-switch_time_PIR);
-
+  Serial.println(1000L*60L*manLightDur);
+  boolean humanDetected = digitalRead(PIR1) | digitalRead(PIR2) | digitalRead(PIR3);//Проверяем датчики движения
+  
   if(ledStatus){
     analogWrite(LEDSTRIP_PIN, brightnessValue/4); //Включаем подсветку с помощью ШИМ
+    if(PIRlight && (millis()-switch_time_PIR > 1000*lightDur)){//Подсветка горит и была включена с помощью PIR сенсора:
+      if(humanDetected){//Время вышло, но снова обнаружено движение
+        switch_time_PIR = millis();//Обновление счетчика времени
+      }
+      else{
+        ledstripOff();//Выключаем подсветку при превышении таймером заданного промежутка времени lightDur (сек.)
+      }
+    }
+    else if(!PIRlight && (millis()-switch_time > 1000L*60L*manLightDur)){//Подсветка горит и была включена с помощью кнопки:
+      ledstripOff();//Выключаем подсветку  при превышения таймером заданного промежутка manLightDur (мин.)
+    }
   }
   else{
     analogWrite(LEDSTRIP_PIN, 0); //Выключаем подсветку с помощью ШИМ
@@ -61,7 +80,7 @@ void loop() {
   
   if(sensorValue>thresholdValue){//Если достаточно темно
     digitalWrite(LED_BUILTIN, HIGH);//Включаем светодиод на плате для индикации, что освещение теемнее, чем порог
-    boolean humanDetected = digitalRead(PIR1) | digitalRead(PIR2) | digitalRead(PIR3);
+    //boolean humanDetected = digitalRead(PIR1) | digitalRead(PIR2) | digitalRead(PIR3);
     Serial.println("Dark mode. PIR1= "+String(digitalRead(PIR1))+" PIR2= "+String(digitalRead(PIR2))+" PIR3= "+String(digitalRead(PIR3)));
     if(!ledStatus && humanDetected){//Если подсветка была выключена и сработал один из сенсоров, то включаем подсветку на X секунд
       PIRlight=true;//Выставляем признак включения подсветки от PIR сенсора
@@ -73,13 +92,8 @@ void loop() {
     //sensorValue = analogRead(DARKNESS_PIN);//Считываем текущую освещенность
   }
   else{
-    digitalWrite(LED_BUILTIN, LOW);//Включаем светодиод на плате
+    digitalWrite(LED_BUILTIN, LOW);//Выключаем светодиод на плате
   }
-
-  if(ledStatus && PIRlight && (millis()-switch_time_PIR > 1000*lightDur)){//Подсветка горит и была включена с помощью PIR сенсора:
-    ledstripOff();//Выключаем подсветку при привышении таймером заданного промежутка времени
-  }
-  
 }
 
 void ledstripOn(){
@@ -102,7 +116,7 @@ void manualSwitch(){//Обработчик прерываний по нажат�
     if(ledStatus){
       ledstripOff();
     }
-    else{
+    else if(!ledStatus && sensorValue>thresholdValue){ //Кнопка на включение срабатывает только в темноте
       ledstripOn();
     }
   switch_time = millis();
